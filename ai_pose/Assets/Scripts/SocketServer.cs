@@ -21,7 +21,9 @@ public class SocketServer
     }
 
     private static Socket server = null;
+    private static Socket currentClient = null;
     private static Dictionary<string, Socket> clients = new Dictionary<string, Socket> { };
+    public static Action<string> RecevieMessage { get; set; }
     /************************************************Unity方法与事件***********************************************/
 
     /************************************************自 定 义 方 法************************************************/
@@ -71,7 +73,11 @@ public class SocketServer
         }
         Debug.Log("->server stopped");
     }
-
+    //发送消息
+    public static void Send(string message)
+    {
+        Send(currentClient, message);
+    }
     //连接回调
     private static void AcceptCallback(IAsyncResult ar)
     {
@@ -81,6 +87,7 @@ public class SocketServer
             if (listener != null)
             {
                 Socket client = listener.EndAccept(ar);
+                currentClient = client;
                 StateObject state = new StateObject();
                 state.workSocket = client;
                 IPEndPoint clientEndPoint = (IPEndPoint)client.RemoteEndPoint;
@@ -111,9 +118,10 @@ public class SocketServer
                 {
                     byte[] bytes = new byte[byteLength];
                     Buffer.BlockCopy(state.buffer, 0, bytes, 0, byteLength);
-                    string content = Encoding.Default.GetString(bytes);
-                    Debug.LogFormat("server received datas: {0}", content);
-                    client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+                    string message = Encoding.Default.GetString(bytes);
+                    Debug.LogFormat("server received datas: {0}", message);
+                    OnRecevieMessage(message);
+                    client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);                    
                 }
             }
             catch (Exception ex)
@@ -130,6 +138,14 @@ public class SocketServer
             byte[] bytes = Encoding.Default.GetBytes(message);
             client.BeginSend(bytes, 0, bytes.Length, 0, SendCallback, client);
         }
+        else if (client == null)
+        {
+            Debug.LogWarning("SocketServer.Send->client is null");
+        }
+        else if (string.IsNullOrEmpty(message))
+        {
+            Debug.LogWarning("SocketServer.Send->message is null or empty");
+        }
     }
     //发送回调
     private static void SendCallback(IAsyncResult ar)
@@ -138,5 +154,11 @@ public class SocketServer
         int bytesSent = handler.EndSend(ar);
         //handler.Shutdown(SocketShutdown.Both);
         //handler.Close();
+    }
+    //当收到数据时
+    private static void OnRecevieMessage(string message)
+    {
+        if (RecevieMessage != null)
+            RecevieMessage(message);
     }
 }
