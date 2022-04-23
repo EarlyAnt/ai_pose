@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -7,6 +6,7 @@ using UnityEngine;
 
 public class SocketClient
 {
+    /************************************************属性与变量命名************************************************/
     public class StateObject
     {
         // 当前客户端的Socket
@@ -17,88 +17,54 @@ public class SocketClient
         public byte[] buffer = new byte[BufferSize];
     }
 
-    public static bool _BoolRevContent = false;
-    public static bool BoolRevContent
-    {
-        get { return _BoolRevContent; }
-        set { _BoolRevContent = value; }
-    }
-    public static Socket clientT;
-    public static bool ConnectServercer(string ip, string port)
+    private static Socket client;
+    /************************************************Unity方法与事件***********************************************/
+
+    /************************************************自 定 义 方 法************************************************/
+    //连接服务器
+    public static bool Connect(string ip, int port)
     {
         try
         {
-            IPAddress IP = IPAddress.Parse(ip);
-            IPEndPoint Point = new IPEndPoint(IP, int.Parse(port));
-            clientT = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            clientT.BeginConnect(Point, new AsyncCallback(ConnectCallback), clientT);
-            Receive(clientT);
+            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+            client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            client.BeginConnect(serverEndPoint, new AsyncCallback(ConnectCallback), client);
+            Receive(client);
             return true;
         }
         catch (Exception ex)
         {
+            Debug.LogErrorFormat("SocketClient.Connect->error: {0}", ex.Message);
             return false;
         }
     }
-
-    public static void StopSocket()
+    //断开服务器连接
+    public static void Disconnect()
     {
-        if (clientT != null && clientT.Connected)
+        if (client != null && client.Connected)
         {
-            clientT.Shutdown(SocketShutdown.Both);
-            clientT.Disconnect(false);
-            clientT.Close();
+            client.Shutdown(SocketShutdown.Both);
+            client.Disconnect(false);
+            client.Close();
         }
+        Debug.Log("->client disconnected");
     }
-
-
-    private static void ConnectCallback(IAsyncResult ar)
-    {
-        Socket client = (Socket)ar.AsyncState;
-        client.EndConnect(ar);
-    }
-    private static void Receive(Socket client)
-    {
-        StateObject state = new StateObject();
-        state.workSocket = client;
-        client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
-    }
-
-    public static void ReceiveCallback(IAsyncResult ar)
-    {
-        StateObject state = (StateObject)ar.AsyncState;
-        Socket client = state.workSocket;
-        int byteLength = client.EndReceive(ar);
-        if (byteLength > 0)
-        {
-            BoolRevContent = true;
-            client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
-            byte[] bytes = new byte[byteLength];
-            Buffer.BlockCopy(state.buffer, 0, bytes, 0, byteLength);
-            string content = Encoding.Default.GetString(bytes);
-            Debug.LogFormat("Client received datas: {0}", content);
-            BoolRevContent = false;
-        }
-        else
-        {
-
-        }
-    }
-
+    //发送数据
     public static bool Send(string message)
     {
         try
         {
             byte[] bytes = Encoding.Default.GetBytes(message);
-            clientT.BeginSend(bytes, 0, bytes.Length, 0, new AsyncCallback(SendCallback), clientT);
+            client.BeginSend(bytes, 0, bytes.Length, 0, new AsyncCallback(SendCallback), client);
             return true;
         }
         catch (Exception ex)
         {
+            Debug.LogErrorFormat("SocketClient.Send->error: {0}", ex.Message);
             return false;
         }
     }
-
+    //发送回调
     private static void SendCallback(IAsyncResult ar)
     {
         try
@@ -110,9 +76,38 @@ public class SocketClient
             // Signal that all bytes have been sent.
             //sendDone.Set();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-
+            Debug.LogErrorFormat("SocketClient.SendCallback->error: {0}", ex.Message);
+        }
+    }
+    //连接回调
+    private static void ConnectCallback(IAsyncResult ar)
+    {
+        Socket client = (Socket)ar.AsyncState;
+        client.EndConnect(ar);
+        Debug.LogFormat("->client[{0}] connected to server", (IPEndPoint)client.LocalEndPoint);
+    }
+    //接收数据
+    private static void Receive(Socket client)
+    {
+        StateObject state = new StateObject();
+        state.workSocket = client;
+        client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+    }
+    //接收回调
+    private static void ReceiveCallback(IAsyncResult ar)
+    {
+        StateObject state = (StateObject)ar.AsyncState;
+        Socket client = state.workSocket;
+        int byteLength = client.EndReceive(ar);
+        if (byteLength > 0)
+        {
+            client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+            byte[] bytes = new byte[byteLength];
+            Buffer.BlockCopy(state.buffer, 0, bytes, 0, byteLength);
+            string content = Encoding.Default.GetString(bytes);
+            Debug.LogFormat("->client received datas: {0}", content);
         }
     }
 }

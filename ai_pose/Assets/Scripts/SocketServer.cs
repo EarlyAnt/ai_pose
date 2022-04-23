@@ -7,6 +7,7 @@ using UnityEngine;
 
 public class SocketServer
 {
+    /************************************************属性与变量命名************************************************/
     public class StateObject
     {
         // Client socket.
@@ -19,95 +20,60 @@ public class SocketServer
         public StringBuilder sb = new StringBuilder();
     }
 
-    public static string ErrorMsg = string.Empty;
-    public static Action<string> StateChanged { get; set; }
-
     private static Socket server = null;
+    private static Dictionary<string, Socket> clients = new Dictionary<string, Socket> { };
+    /************************************************Unity方法与事件***********************************************/
 
-    /// <summary>
-    /// 当前发送数据的客户端
-    /// </summary>
-    public static IPEndPoint _CurrentClient;
-    public static IPEndPoint CurrentClient
-    {
-        get { return _CurrentClient; }
-        set { _CurrentClient = value; }
-    }
-
-    /// <summary>
-    /// 触发接收消息的委托
-    /// </summary>
-    public static bool _RevBool = false;
-    public static event EventHandler RevBoolChanged = null;
-    public static bool RevBool
-    {
-        get { return _RevBool; }
-        set
-        {
-            if (_RevBool != value)
-            {
-                _RevBool = value;
-                if (_RevBool)
-                {
-                    RevBoolChanged?.Invoke(0, EventArgs.Empty);
-                }
-            }
-        }
-    }
-    /// <summary>
-    /// 存储客户端连接Socket
-    /// </summary>
-    public static Dictionary<string, Socket> clientList = new Dictionary<string, Socket> { };
-    /// <summary>
-    /// 打开服务器
-    /// </summary>
-    /// <returns></returns>
-    public static bool OpenServer(string Ip, string Port)
+    /************************************************自 定 义 方 法************************************************/
+    //打开服务器
+    public static bool StartServer(string ip, int port)
     {
         try
         {
-            IPAddress IP = IPAddress.Parse(Ip);
-            IPEndPoint Point = new IPEndPoint(IP, int.Parse(Port));
+            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
             server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            server.Bind(Point);
+            server.Bind(serverEndPoint);
             server.Listen(10);
             server.BeginAccept(new AsyncCallback(AcceptCallback), server);
-            OnStateChanged("服务器打开成功");
-            Debug.LogFormat("->>server running: {0}", Point);
+            Debug.LogFormat("->server running: {0}", serverEndPoint);
             return true;
         }
         catch (Exception ex)
         {
-            ErrorMsg = ex.Message;
-            OnStateChanged("服务器打开失败:" + ex.Message);
+            Debug.LogErrorFormat("SocketServer.StartServer->error: {0}", ex.Message);
             return false;
         }
     }
-
-    public static void StopSocket()
+    //停止服务器
+    public static void StopServer()
     {
-        if (server != null)
+        try
         {
-            server.Close();
-        }
-
-        if (clientList != null && clientList.Count > 0)
-        {
-            foreach (var kvp in clientList)
+            if (server != null)
             {
-                kvp.Value.Shutdown(SocketShutdown.Both);
-                kvp.Value.Disconnect(false);
-                kvp.Value.Close();
+                server.Close();
             }
-            clientList.Clear();
+
+            if (clients != null && clients.Count > 0)
+            {
+                foreach (var kvp in clients)
+                {
+                    kvp.Value.Shutdown(SocketShutdown.Both);
+                    kvp.Value.Disconnect(false);
+                    kvp.Value.Close();
+                }
+                clients.Clear();
+            }
         }
+        catch (Exception ex)
+        {
+            Debug.LogErrorFormat("SocketServer.StopServer->error: {0}", ex.Message);
+        }
+        Debug.Log("->server stopped");
     }
 
-    /// <summary>
-    /// 连接回调
-    /// </summary>
-    /// <param name="ar"></param>
-    public static void AcceptCallback(IAsyncResult ar)
+    //连接回调
+    private static void AcceptCallback(IAsyncResult ar)
     {
         try
         {
@@ -117,32 +83,26 @@ public class SocketServer
                 Socket client = listener.EndAccept(ar);
                 StateObject state = new StateObject();
                 state.workSocket = client;
-                IPEndPoint clientipe = (IPEndPoint)client.RemoteEndPoint;
-                Debug.LogFormat("->>a new client connected: {0}", clientipe);
-                clientList.Add(clientipe.ToString(), client);
-                client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(RevCallback), state);
-                Send(client, "->>server iniitalized");
-                OnStateChanged(clientipe.ToString() + "----已连上服务器");
+                IPEndPoint clientEndPoint = (IPEndPoint)client.RemoteEndPoint;
+                Debug.LogFormat("->a new client connected: {0}", clientEndPoint);
+                clients.Add(clientEndPoint.ToString(), client);
+                client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+                Send(client, string.Format("server say, welcome [{0}]", clientEndPoint.ToString()));
                 listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
             }
         }
         catch (Exception ex)
         {
-            ErrorMsg = ex.Message;
-            OnStateChanged(ErrorMsg);
+            Debug.LogErrorFormat("SocketServer.AcceptCallback->error: {0}", ex.Message);
         }
     }
-    /// <summary>
-    /// 接收回调
-    /// </summary>
-    /// <param name="ar"></param>
-    public static void RevCallback(IAsyncResult ar)
+    //接收回调
+    private static void ReceiveCallback(IAsyncResult ar)
     {
         StateObject state = (StateObject)ar.AsyncState;
         Socket client = state.workSocket;
         if (client != null)
         {
-            IPEndPoint clientipe = (IPEndPoint)client.RemoteEndPoint;
             try
             {
                 // Read data from the client socket.
@@ -152,48 +112,31 @@ public class SocketServer
                     byte[] bytes = new byte[byteLength];
                     Buffer.BlockCopy(state.buffer, 0, bytes, 0, byteLength);
                     string content = Encoding.Default.GetString(bytes);
-                    Debug.LogFormat("Server received datas: {0}", content);
-                    CurrentClient = clientipe;
-                    client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(RevCallback), state);
-                    RevBool = true;
-                    RevBool = false;
+                    Debug.LogFormat("server received datas: {0}", content);
+                    client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
                 }
             }
             catch (Exception ex)
             {
-                ErrorMsg = clientipe.ToString() + "退出";
-                OnStateChanged(clientipe.ToString() + "----退出" + ex.Message);
+                Debug.LogErrorFormat("SocketServer.ReceiveCallback->client[{0}] error: {1}", ((IPEndPoint)client.RemoteEndPoint).ToString(), ex.Message);
             }
         }
-
     }
-    /// <summary>
-    /// 发送回复客户端
-    /// </summary>
-    /// <param name="handle">客户端的Socket</param>
-    public static void Send(Socket client, string message)
+    //发送消息(回复客户端)
+    private static void Send(Socket client, string message)
     {
         if (client != null && !string.IsNullOrEmpty(message))//确保发送的字节长度不为0
         {
             byte[] bytes = Encoding.Default.GetBytes(message);
-            client.BeginSend(bytes, 0, bytes.Length, 0, new AsyncCallback(SendCallback), client);
+            client.BeginSend(bytes, 0, bytes.Length, 0, SendCallback, client);
         }
     }
-    /// <summary>
-    /// 发送回调
-    /// </summary>
-    /// <param name="ar"></param>
+    //发送回调
     private static void SendCallback(IAsyncResult ar)
     {
         Socket handler = (Socket)ar.AsyncState;
         int bytesSent = handler.EndSend(ar);
         //handler.Shutdown(SocketShutdown.Both);
         //handler.Close();
-    }
-
-    private static void OnStateChanged(string state)
-    {
-        if (StateChanged != null)
-            StateChanged(state);
     }
 }
