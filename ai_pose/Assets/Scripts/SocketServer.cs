@@ -49,11 +49,6 @@ public class SocketServer
     {
         try
         {
-            if (server != null)
-            {
-                server.Close();
-            }
-
             if (clients != null && clients.Count > 0)
             {
                 foreach (var kvp in clients)
@@ -63,6 +58,11 @@ public class SocketServer
                     kvp.Value.Close();
                 }
                 clients.Clear();
+            }
+
+            if (server != null)
+            {
+                server.Close();
             }
         }
         catch (Exception ex)
@@ -93,7 +93,7 @@ public class SocketServer
         }
         catch (Exception ex)
         {
-            Debug.LogErrorFormat("SocketServer.AcceptCallback->error: {0}", ex.Message);
+            Debug.LogErrorFormat("SocketServer.AcceptCallback->error: {0}", ex);
         }
     }
     //接收回调
