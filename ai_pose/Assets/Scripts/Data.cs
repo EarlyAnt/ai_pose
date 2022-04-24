@@ -43,7 +43,7 @@ class BodyBone
             if (duration > 0)
                 this.bone.DOMove(position, duration);
             else
-                this.bone.position = position;
+                this.bone.localPosition = position;
         }
     }
 }
