@@ -31,28 +31,28 @@ public class BoneControllByNet : MonoBehaviour
     }
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.S) && !serverRunning)
+        if (Input.GetKeyDown(KeyCode.S) && !this.serverRunning)
         {
-            serverRunning = true;
+            this.serverRunning = true;
             SocketServer.StartServer(NetHelper.GetLocalIPv4(), this.port);
         }
-        else if (Input.GetKeyDown(KeyCode.T) && serverRunning)
+        else if (Input.GetKeyDown(KeyCode.T) && this.serverRunning)
         {
-            serverRunning = false;
+            this.serverRunning = false;
             SocketServer.StopServer();
         }
 
-        if (Input.GetKeyDown(KeyCode.Y) && !clientRunning)
+        if (Input.GetKeyDown(KeyCode.Y) && !this.clientRunning)
         {
-            clientRunning = true;
+            this.clientRunning = true;
             SocketClient.Connect(NetHelper.GetLocalIPv4(), this.port);
         }
-        else if (Input.GetKeyDown(KeyCode.U) && clientRunning)
+        else if (Input.GetKeyDown(KeyCode.U) && this.clientRunning)
         {
-            clientRunning = false;
+            this.clientRunning = false;
             SocketClient.Disconnect();
         }
-        else if (Input.GetKeyDown(KeyCode.Space) && clientRunning)
+        else if (Input.GetKeyDown(KeyCode.Space) && this.clientRunning)
         {
             SocketClient.Send(this.message);
         }
@@ -96,6 +96,11 @@ public class BoneControllByNet : MonoBehaviour
     }
     private void OnApplicationQuit()
     {
+        if (this.serverRunning)
+        {
+            this.serverRunning = false;
+            SocketServer.StopServer();
+        }
         Debug.Log("exit application");
     }
     /************************************************自 定 义 方 法************************************************/
