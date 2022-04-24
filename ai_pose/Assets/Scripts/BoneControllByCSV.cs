@@ -92,7 +92,7 @@ public class BoneControllByCSV : MonoBehaviour
                 string boneName = this.bones[i].Name;
                 Vector3 position = this.boneDatas[boneName][this.index];
                 Debug.LogFormat("bone: {0}, position: {1}", boneName, position);
-                this.bones[i].SetPosition(position);
+                this.bones[i].SetPosition(position, 0);
             }
             this.index = (this.index + 1) % this.boneDatas.ToList()[0].Value.Count;
             yield return new WaitForSeconds(this.interval);

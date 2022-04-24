@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DG.Tweening;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -35,11 +36,11 @@ class BodyBone
         }
     }
 
-    public void SetPosition(Vector3 position)
+    public void SetPosition(Vector3 position, float duration)
     {
         if (this.bone != null && this.bone.gameObject.activeInHierarchy)
         {
-            this.bone.position = position;
+            this.bone.DOMove(position, duration);
         }
     }
 }

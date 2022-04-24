@@ -14,6 +14,8 @@ public class BoneControllByNet : MonoBehaviour
     private Vector3 rate = Vector3.one * -0.25f;
     [SerializeField]
     private List<BodyBone> bones;
+    [SerializeField, Range(0f, 1f)]
+    private float lerpDuration = 0.5f;
     [SerializeField]
     private string message;
     [SerializeField]
@@ -154,7 +156,7 @@ public class BoneControllByNet : MonoBehaviour
 
             Vector3 hipPos = (rightHipData.Position - leftHipData.Position) / 2;
             BodyBone hipBone = this.bones.Find(t => t.Name == BODY);
-            this.taskList.Enqueue(() => hipBone.SetPosition(hipPos));
+            this.taskList.Enqueue(() => hipBone.SetPosition(hipPos, 0));
 
             foreach (string position in positions)
             {
@@ -169,7 +171,7 @@ public class BoneControllByNet : MonoBehaviour
                 this.taskList.Enqueue(() =>
                 {
                     Vector3 localPosition = bodyBone.Bone.InverseTransformPoint(boneData.Position);
-                    bodyBone.SetPosition(new Vector3(localPosition.x * this.rate.x, localPosition.y * this.rate.y, localPosition.z * this.rate.z));
+                    bodyBone.SetPosition(new Vector3(localPosition.x * this.rate.x, localPosition.y * this.rate.y, localPosition.z * this.rate.z), this.lerpDuration);
                 });
             }
         }
