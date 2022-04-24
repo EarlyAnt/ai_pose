@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 [System.Serializable]
 class BodyBone
@@ -7,6 +9,8 @@ class BodyBone
     private string name;
     [SerializeField]
     private Transform bone;
+    [SerializeField]
+    private Material material;
     [SerializeField]
     private Vector3 offset;
     [SerializeField]
@@ -24,6 +28,10 @@ class BodyBone
             this.bone.name = name;
             this.bone.SetParent(root);
             this.bone.gameObject.SetActive(active);
+
+            MeshRenderer meshRenderer = this.bone.GetComponent<MeshRenderer>();
+            if (meshRenderer != null && this.material != null)
+                meshRenderer.material = this.material;
         }
     }
 
@@ -34,4 +42,28 @@ class BodyBone
             this.bone.position = position;
         }
     }
+}
+
+[Serializable]
+class GizmosData
+{
+    [SerializeField]
+    private bool enable;
+    [SerializeField]
+    private List<BonePoints> datas;
+
+    public bool Enable { get { return this.enable; } }
+    public List<BonePoints> Datas { get { return this.datas; } }
+}
+
+[Serializable]
+public class BonePoints
+{
+    [SerializeField]
+    private Color lineColor;
+    [SerializeField]
+    private List<Transform> points;
+
+    public Color LineColor { get { return this.lineColor; } }
+    public List<Transform> Points { get { return this.points; } }
 }

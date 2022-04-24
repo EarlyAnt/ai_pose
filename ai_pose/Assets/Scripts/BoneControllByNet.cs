@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
@@ -13,11 +11,15 @@ public class BoneControllByNet : MonoBehaviour
     [SerializeField, Range(0.1f, 100f)]
     private float boneScale = 1f;
     [SerializeField]
+    private Vector3 rate = Vector3.one * -0.25f;
+    [SerializeField]
     private List<BodyBone> bones;
     [SerializeField]
     private string message;
     [SerializeField]
     private int port = 8080;
+    [SerializeField]
+    private GizmosData gizmosDatas;
     private bool serverRunning { get; set; }
     private bool clientRunning { get; set; }
     private Queue<Action> taskList = new Queue<Action>();
@@ -76,12 +78,27 @@ public class BoneControllByNet : MonoBehaviour
         //GUI.Label(new Rect(Screen.width - 245, 110, 250, 30), "Left Control : Front Camera");
         //GUI.Label(new Rect(Screen.width - 245, 130, 250, 30), "Alt : LookAt Camera");
     }
+    private void OnDrawGizmos()
+    {
+        if (this.gizmosDatas == null || !this.gizmosDatas.Enable || this.gizmosDatas.Datas.Count == 0)
+            return;
+        
+        foreach (var data in this.gizmosDatas.Datas)
+        {
+            for (int i = 0; i < data.Points.Count; i++)
+            {
+                Gizmos.color = data.LineColor;
+                if (i + 1 < data.Points.Count)
+                    Gizmos.DrawLine(data.Points[i].position, data.Points[i + 1].position);
+            }
+        }
+    }
     private void OnApplicationQuit()
     {
         Debug.Log("exit application");
     }
     /************************************************自 定 义 方 法************************************************/
-    [ContextMenu("自动填写骨骼名称")]
+    [ContextMenu("创建骨骼点")]
     private void AutoFillBoneName()
     {
         if (this.boneRoot == null)
@@ -137,7 +154,7 @@ public class BoneControllByNet : MonoBehaviour
                 continue;
             }
 
-            this.taskList.Enqueue(() => bodyBone.SetPosition(new Vector3(x, y * -1, z)));
+            this.taskList.Enqueue(() => bodyBone.SetPosition(new Vector3(x * this.rate.x, y * this.rate.y, z * this.rate.z)));
         }
     }
 }
