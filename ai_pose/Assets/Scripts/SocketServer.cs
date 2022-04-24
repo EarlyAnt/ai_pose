@@ -13,7 +13,7 @@ public class SocketServer
         // Client socket.
         public Socket workSocket = null;
         // Size of receive buffer.
-        public const int BufferSize = 22000;
+        public const int BufferSize = 4096;
         // Receive buffer.
         public byte[] buffer = new byte[BufferSize];
         // Received data string.
@@ -121,7 +121,7 @@ public class SocketServer
                     string message = Encoding.Default.GetString(bytes);
                     Debug.LogFormat("server received datas: {0}", message);
                     OnRecevieMessage(message);
-                    client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);                    
+                    client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
                 }
             }
             catch (Exception ex)
@@ -158,7 +158,14 @@ public class SocketServer
     //当收到数据时
     private static void OnRecevieMessage(string message)
     {
-        if (RecevieMessage != null)
-            RecevieMessage(message);
+        try
+        {
+            if (RecevieMessage != null)
+                RecevieMessage(message);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogErrorFormat("SocketServer.OnRecevieMessage->callback invoke error: {0}", ex);
+        }
     }
 }
