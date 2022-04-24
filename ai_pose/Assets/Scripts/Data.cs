@@ -40,7 +40,10 @@ class BodyBone
     {
         if (this.bone != null && this.bone.gameObject.activeInHierarchy)
         {
-            this.bone.DOMove(position, duration);
+            if (duration > 0)
+                this.bone.DOMove(position, duration);
+            else
+                this.bone.position = position;
         }
     }
 }

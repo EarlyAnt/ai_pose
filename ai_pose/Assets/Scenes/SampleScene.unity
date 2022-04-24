@@ -2100,6 +2100,7 @@ MonoBehaviour:
     material: {fileID: 0}
     offset: {x: 0, y: 0, z: 0}
     rate: 0
+  lerpDuration: 0.5
   message: 
   port: 2000
   gizmosDatas:
