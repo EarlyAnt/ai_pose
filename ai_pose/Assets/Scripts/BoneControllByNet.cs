@@ -7,21 +7,21 @@ public class BoneControllByNet : MonoBehaviour
 {
     /************************************************属性与变量命名************************************************/
     [SerializeField]
-    private Transform boneRoot;
+    private int port = 8080;
+    [SerializeField]
+    private string message;
+    [SerializeField]
+    private GizmosData gizmosDatas;
     [SerializeField, Range(0.1f, 100f)]
     private float boneScale = 1f;
     [SerializeField]
     private Vector3 rate = Vector3.one * -0.25f;
-    [SerializeField]
-    private List<BodyBone> bones;
     [SerializeField, Range(0f, 1f)]
     private float lerpDuration = 0.5f;
     [SerializeField]
-    private string message;
+    private Transform boneRoot;
     [SerializeField]
-    private int port = 8080;
-    [SerializeField]
-    private GizmosData gizmosDatas;
+    private List<BodyBone> bones;
     private bool serverRunning { get; set; }
     private bool clientRunning { get; set; }
     private Queue<Action> taskList = new Queue<Action>();
@@ -156,7 +156,7 @@ public class BoneControllByNet : MonoBehaviour
 
             Vector3 hipPos = (rightHipData.Position - leftHipData.Position) / 2;
             BodyBone hipBone = this.bones.Find(t => t.Name == BODY);
-            this.taskList.Enqueue(() => hipBone.SetPosition(hipPos, 0));
+            //this.taskList.Enqueue(() => hipBone.SetPosition(hipPos));
 
             foreach (string position in positions)
             {
@@ -170,8 +170,26 @@ public class BoneControllByNet : MonoBehaviour
 
                 this.taskList.Enqueue(() =>
                 {
-                    Vector3 localPosition = bodyBone.Bone.InverseTransformPoint(boneData.Position);
-                    bodyBone.SetPosition(new Vector3(localPosition.x * this.rate.x, localPosition.y * this.rate.y, localPosition.z * this.rate.z), this.lerpDuration);
+                    //if (bodyBone.Bone.parent != null)
+                    //{
+                    //    Vector3 localPosition = bodyBone.Bone.parent.InverseTransformPoint(boneData.Position);
+                    //    localPosition.x *= this.rate.x;
+                    //    localPosition.y *= this.rate.y;
+                    //    localPosition.z *= this.rate.z;
+                    //    bodyBone.SetLocalPosition(localPosition, this.lerpDuration);
+                    //}
+
+                    //Vector3 localPosition = hipBone.Bone.InverseTransformPoint(boneData.Position);
+                    //localPosition.x *= this.rate.x;
+                    //localPosition.y *= this.rate.y;
+                    //localPosition.z *= this.rate.z;
+                    //bodyBone.SetLocalPosition(localPosition, this.lerpDuration);
+
+                    Vector3 pos = boneData.Position;
+                    pos.x *= this.rate.x;
+                    pos.y *= this.rate.y;
+                    pos.z *= this.rate.z;
+                    bodyBone.SetPosition(pos, this.lerpDuration);
                 });
             }
         }

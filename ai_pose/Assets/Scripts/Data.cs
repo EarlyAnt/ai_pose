@@ -36,15 +36,23 @@ class BodyBone
         }
     }
 
-    public void SetPosition(Vector3 position, float duration)
+    public void SetPosition(Vector3 position, float duration = 0)
     {
         if (this.bone != null && this.bone.gameObject.activeInHierarchy)
         {
             if (duration > 0)
                 this.bone.DOMove(position, duration);
             else
-                this.bone.localPosition = position;
+                this.bone.position = position;
         }
+    }
+
+    public void SetLocalPosition(Vector3 localPosition, float duration = 0)
+    {
+        if (duration > 0)
+            this.bone.DOLocalMove(localPosition, duration);
+        else
+            this.bone.localPosition = localPosition;
     }
 }
 
