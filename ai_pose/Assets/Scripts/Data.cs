@@ -79,3 +79,15 @@ public class BonePoints
     public Color LineColor { get { return this.lineColor; } }
     public List<Transform> Points { get { return this.points; } }
 }
+
+public class BoneData
+{
+    public string BoneName { get; set; }
+    public Vector3 Position { get; set; }
+
+    public BoneData(string boneName, float x, float y, float z)
+    {
+        this.BoneName = boneName;
+        this.Position = new Vector3(x, y, z);
+    }
+}

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
-public class BoneControllByNet : MonoBehaviour
+public class BoneControllByIK : MonoBehaviour
 {
     /************************************************属性与变量命名************************************************/
     [SerializeField]
@@ -19,6 +19,8 @@ public class BoneControllByNet : MonoBehaviour
     [SerializeField, Range(0f, 1f)]
     private float lerpDuration = 0.5f;
     [SerializeField]
+    private Animator animator;
+    [SerializeField]
     private Transform boneRoot;
     [SerializeField]
     private List<BodyBone> bones;
@@ -30,6 +32,9 @@ public class BoneControllByNet : MonoBehaviour
     private void Start()
     {
         SocketServer.RecevieMessage += this.OnServerReceiveMessage;
+
+        if (this.animator == null)
+            this.animator = this.GetComponent<Animator>();
     }
     private void Update()
     {
@@ -80,6 +85,18 @@ public class BoneControllByNet : MonoBehaviour
         //GUI.Label(new Rect(Screen.width - 245, 90, 250, 30), "Hit Spase key while Stopping : Rest");
         //GUI.Label(new Rect(Screen.width - 245, 110, 250, 30), "Left Control : Front Camera");
         //GUI.Label(new Rect(Screen.width - 245, 130, 250, 30), "Alt : LookAt Camera");
+    }
+    private void OnAnimatorIK(int layerIndex)
+    {
+        this.animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 1f);
+        this.animator.SetIKPosition(AvatarIKGoal.LeftHand, this.bones[0].Bone.position);
+        //this.animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 1f);
+        //this.animator.SetIKRotation(AvatarIKGoal.LeftHand, this.bones[0].Bone.rotation);
+
+        this.animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 1f);
+        this.animator.SetIKPosition(AvatarIKGoal.RightHand, this.bones[1].Bone.position);
+        //this.animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 1f);
+        //this.animator.SetIKRotation(AvatarIKGoal.RightHand, this.bones[1].Bone.rotation);
     }
     private void OnDrawGizmos()
     {
@@ -145,19 +162,6 @@ public class BoneControllByNet : MonoBehaviour
 
         try
         {
-            string leftHip = positions.Find(t => t.ToLower().Contains("left_hip"));
-            string rightHip = positions.Find(t => t.ToLower().Contains("right_hip"));
-
-            if (string.IsNullOrEmpty(leftHip) || string.IsNullOrEmpty(rightHip))
-                return;
-
-            BoneData leftHipData = this.GetBoneData(leftHip);
-            BoneData rightHipData = this.GetBoneData(rightHip);
-
-            Vector3 hipPos = (rightHipData.Position - leftHipData.Position) / 2;
-            BodyBone hipBone = this.bones.Find(t => t.Name == BODY);
-            //this.taskList.Enqueue(() => hipBone.SetPosition(hipPos));
-
             foreach (string position in positions)
             {
                 BoneData boneData = this.GetBoneData(position);
@@ -170,21 +174,7 @@ public class BoneControllByNet : MonoBehaviour
 
                 this.taskList.Enqueue(() =>
                 {
-                    //if (bodyBone.Bone.parent != null)
-                    //{
-                    //    Vector3 localPosition = bodyBone.Bone.parent.InverseTransformPoint(boneData.Position);
-                    //    localPosition.x *= this.rate.x;
-                    //    localPosition.y *= this.rate.y;
-                    //    localPosition.z *= this.rate.z;
-                    //    bodyBone.SetLocalPosition(localPosition, this.lerpDuration);
-                    //}
-
-                    //Vector3 localPosition = hipBone.Bone.InverseTransformPoint(boneData.Position);
-                    //localPosition.x *= this.rate.x;
-                    //localPosition.y *= this.rate.y;
-                    //localPosition.z *= this.rate.z;
-                    //bodyBone.SetLocalPosition(localPosition, this.lerpDuration);
-
+                    Debug.LogFormat("->bone: {0}, position: {1}", boneData.BoneName, boneData.Position);
                     Vector3 pos = boneData.Position;
                     pos.x *= this.rate.x;
                     pos.y *= this.rate.y;
@@ -198,7 +188,6 @@ public class BoneControllByNet : MonoBehaviour
             //Debug.LogWarning(ex);
         }
     }
-
     private BoneData GetBoneData(string positionData)
     {
         try
