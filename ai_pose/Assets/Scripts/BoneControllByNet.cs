@@ -198,7 +198,6 @@ public class BoneControllByNet : MonoBehaviour
             //Debug.LogWarning(ex);
         }
     }
-
     private BoneData GetBoneData(string positionData)
     {
         try

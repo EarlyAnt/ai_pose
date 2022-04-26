@@ -38,6 +38,7 @@ class BodyBone
 
     public void SetPosition(Vector3 position, float duration = 0)
     {
+        position += this.offset;
         if (this.bone != null && this.bone.gameObject.activeInHierarchy)
         {
             if (duration > 0)
@@ -49,6 +50,7 @@ class BodyBone
 
     public void SetLocalPosition(Vector3 localPosition, float duration = 0)
     {
+        localPosition += this.offset;
         if (duration > 0)
             this.bone.DOLocalMove(localPosition, duration);
         else
