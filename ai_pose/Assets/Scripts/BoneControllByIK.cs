@@ -12,7 +12,7 @@ public class BoneControllByIK : MonoBehaviour
     private string message;
     [SerializeField]
     private GizmosData gizmosDatas;
-    [SerializeField, Range(0.1f, 100f)]
+    [SerializeField, Range(0.01f, 100f)]
     private float boneScale = 1f;
     [SerializeField]
     private Vector3 rate = Vector3.one * -0.25f;
@@ -23,11 +23,13 @@ public class BoneControllByIK : MonoBehaviour
     [SerializeField]
     private Animator animator;
     [SerializeField]
+    private Transform leftTarget;
+    [SerializeField]
+    private Transform rightTarget;
+    [SerializeField]
     private Transform boneRoot;
     [SerializeField]
-    private List<BodyBone> bones;
-    private Transform leftTarget;
-    private Transform rightTarget;
+    private List<BodyBone> bones;    
     private bool serverRunning { get; set; }
     private bool clientRunning { get; set; }
     private Queue<Action> taskList = new Queue<Action>();
