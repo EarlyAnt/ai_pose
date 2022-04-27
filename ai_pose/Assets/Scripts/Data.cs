@@ -11,8 +11,6 @@ class BodyBone
     [SerializeField]
     private Transform bone;
     [SerializeField]
-    private Material material;
-    [SerializeField]
     private Vector3 offset;
     [SerializeField]
     private float rate = 1;
@@ -29,10 +27,6 @@ class BodyBone
             this.bone.name = name;
             this.bone.SetParent(root);
             this.bone.gameObject.SetActive(active);
-
-            MeshRenderer meshRenderer = this.bone.GetComponent<MeshRenderer>();
-            if (meshRenderer != null && this.material != null)
-                meshRenderer.material = this.material;
         }
     }
 

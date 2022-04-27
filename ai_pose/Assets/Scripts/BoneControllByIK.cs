@@ -16,6 +16,8 @@ public class BoneControllByIK : MonoBehaviour
     private float boneScale = 1f;
     [SerializeField]
     private Vector3 rate = Vector3.one * -0.25f;
+    [SerializeField]
+    private Vector3 offset = Vector3.zero;
     [SerializeField, Range(0f, 1f)]
     private float lerpDuration = 0.5f;
     [SerializeField]
@@ -24,6 +26,8 @@ public class BoneControllByIK : MonoBehaviour
     private Transform boneRoot;
     [SerializeField]
     private List<BodyBone> bones;
+    private Transform leftTarget;
+    private Transform rightTarget;
     private bool serverRunning { get; set; }
     private bool clientRunning { get; set; }
     private Queue<Action> taskList = new Queue<Action>();
@@ -35,6 +39,9 @@ public class BoneControllByIK : MonoBehaviour
 
         if (this.animator == null)
             this.animator = this.GetComponent<Animator>();
+
+        this.leftTarget = this.bones.Find(t => t.Name == "LEFT_WRIST").Bone;
+        this.rightTarget = this.bones.Find(t => t.Name == "RIGHT_WRIST").Bone;
     }
     private void Update()
     {
@@ -88,15 +95,21 @@ public class BoneControllByIK : MonoBehaviour
     }
     private void OnAnimatorIK(int layerIndex)
     {
-        this.animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 1f);
-        this.animator.SetIKPosition(AvatarIKGoal.LeftHand, this.bones[0].Bone.position);
-        //this.animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 1f);
-        //this.animator.SetIKRotation(AvatarIKGoal.LeftHand, this.bones[0].Bone.rotation);
+        if (this.leftTarget != null)
+        {
+            this.animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, 1f);
+            this.animator.SetIKPosition(AvatarIKGoal.LeftHand, this.leftTarget.position);
+            //this.animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 1f);
+            //this.animator.SetIKRotation(AvatarIKGoal.LeftHand, this.leftTarget.Bone.rotation);
+        }
 
-        this.animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 1f);
-        this.animator.SetIKPosition(AvatarIKGoal.RightHand, this.bones[1].Bone.position);
-        //this.animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 1f);
-        //this.animator.SetIKRotation(AvatarIKGoal.RightHand, this.bones[1].Bone.rotation);
+        if (this.rightTarget != null)
+        {
+            this.animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 1f);
+            this.animator.SetIKPosition(AvatarIKGoal.RightHand, this.rightTarget.position);
+            //this.animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 1f);
+            //this.animator.SetIKRotation(AvatarIKGoal.RightHand, this.leftTarget.Bone.rotation);
+        }
     }
     private void OnDrawGizmos()
     {
@@ -179,6 +192,7 @@ public class BoneControllByIK : MonoBehaviour
                     pos.x *= this.rate.x;
                     pos.y *= this.rate.y;
                     pos.z *= this.rate.z;
+                    pos += this.offset;
                     bodyBone.SetPosition(pos, this.lerpDuration);
                 });
             }
