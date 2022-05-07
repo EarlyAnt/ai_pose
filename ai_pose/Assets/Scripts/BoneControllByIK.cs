@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DG.Tweening;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -29,7 +30,9 @@ public class BoneControllByIK : MonoBehaviour
     [SerializeField]
     private Transform boneRoot;
     [SerializeField]
-    private List<BodyBone> bones;    
+    private bool enableRotation;
+    [SerializeField]
+    private List<BodyBone> bones;
     private bool serverRunning { get; set; }
     private bool clientRunning { get; set; }
     private Queue<Action> taskList = new Queue<Action>();
@@ -177,6 +180,9 @@ public class BoneControllByIK : MonoBehaviour
 
         try
         {
+            Vector3? leftShoudler = null;
+            Vector3? rightShoulder = null;
+
             foreach (string position in positions)
             {
                 BoneData boneData = this.GetBoneData(position);
@@ -196,6 +202,29 @@ public class BoneControllByIK : MonoBehaviour
                     pos.z *= this.rate.z;
                     pos += this.offset;
                     bodyBone.SetPosition(pos, this.lerpDuration);
+                });
+
+                if (boneData.BoneName.ToLower() == "left_shoulder")
+                    leftShoudler = boneData.Position;
+                else if (boneData.BoneName.ToLower() == "right_shoulder")
+                    rightShoulder = boneData.Position;
+            }
+
+
+            if (leftShoudler != null && rightShoulder != null && this.enableRotation)
+            {
+                Vector3 targetDir = leftShoudler.Value - rightShoulder.Value;
+                float angleX = Vector3.Angle(Vector3.right, targetDir);
+                float angleY = Vector3.Angle(Vector3.up, targetDir);
+                float angleZ = Vector3.Angle(Vector3.forward, targetDir);
+                //Debug.LogFormat("position->angleX: {0}, angleY: {1}, angleZ: {2}, leftShoudler: {3}, rightShoulder: {4}",
+                //                angleX, angleY, angleZ, leftShoudler.Value, rightShoulder);
+
+                this.taskList.Enqueue(() =>
+                {
+                    Vector3 eulerAngles = this.transform.eulerAngles;
+                    eulerAngles.y = targetDir.z >= 0 ? angleX : (180 - angleX) + 180;
+                    this.transform.parent.DOLocalRotate(eulerAngles, this.lerpDuration);
                 });
             }
         }
